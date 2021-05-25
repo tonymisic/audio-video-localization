@@ -39,4 +39,4 @@ for i in class_map:
     freq = zeros(10)
     for j in range(10):
         freq[j] = round((class_map[i][j] / class_map[i][10]) * 100, 2)
-    print('Class: {:<30} Frequency: {:<30} Total: {:<10}'.format(i, str(freq), freq.index(max(freq)) + 1))
+    print('Class: {:<30} Frequency: {:<30} Most Common: {:<10}'.format(i, str(freq), freq.index(max(freq)) + 1))
