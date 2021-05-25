@@ -1,6 +1,6 @@
 # my ignores
 AVE_Dataset/
-
+.vscode/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
