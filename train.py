@@ -13,7 +13,7 @@ wandb.init(project="Audio Binary Classifier",
         "dataset": "AVE",
         "device": "GTX1080",
         "epochs": 50,
-        "batch_size": 9,
+        "batch_size": 21,
         "threshold": 0.5
     }
 )
@@ -53,8 +53,8 @@ while epoch <= 50:
         preds = preds.to(device)
         loss = criterion(preds, temporal_labels)
         loss.backward(), optimizer.step()
-        running_loss += loss
-        running_accuracy += temporal_accuracy(preds, temporal_labels, wandb.config['threshold'])
+        running_loss += float(loss)
+        running_accuracy += float(temporal_accuracy(preds, temporal_labels, wandb.config['threshold']))
         batch += 1
         wandb.log({"batch": batch})
         wandb.log({"Training Loss": running_loss / batch})
@@ -75,8 +75,8 @@ while epoch <= 50:
             for j in range(10):
                 preds[i][j] = model(features[i,j,:])
         preds = preds.to(device)
-        running_loss += criterion(preds, temporal_labels)
-        running_accuracy += temporal_accuracy(preds, temporal_labels, wandb.config['threshold'])
+        running_loss += float(criterion(preds, temporal_labels))
+        running_accuracy += float(temporal_accuracy(preds, temporal_labels, wandb.config['threshold']))
         batch += 1
         wandb.log({"Testing Loss": running_loss / batch})
     wandb.log({"Testing Accuracy": running_accuracy / batch})
