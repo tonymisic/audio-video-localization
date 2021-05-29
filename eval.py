@@ -1,7 +1,7 @@
 from torch.utils.data.dataloader import DataLoader
 from audioloader import AVE_Audio
 import torch, wandb 
-from models import BinaryClassifier
+from models import LargeBinaryClassifier
 from utils import temporal_accuracy
 '''
 Main training script
@@ -12,7 +12,7 @@ wandb.init(project="Audio Binary Classifier",
         "dataset": "AVE",
         "device": "GTX1080",
         "batch_size": 1,
-        "threshold": 1.5
+        "threshold": 0.5
     }
 )
 # device 
@@ -24,8 +24,8 @@ val_loader = DataLoader(val_data, wandb.config['batch_size'], shuffle=True, num_
 extractor = torch.hub.load('harritaylor/torchvggish', 'vggish')
 extractor.eval(), extractor.to(device)
 # model
-model = BinaryClassifier()
-model.load_state_dict(torch.load('models/audio1.pth'))
+model = LargeBinaryClassifier()
+model.load_state_dict(torch.load('models/audio0.pth'))
 model.eval(), model.to(device)
 ### --------------- EVAL --------------- ###
 running_accuracy, batch = 0.0, 0

@@ -30,13 +30,15 @@ class BinaryClassifier(nn.Module):
 class LargeBinaryClassifier(nn.Module):
     """Model to classify whether audio is background or event
     """
-    def __init__(self, input=128, hidden=64, output=1):
+    def __init__(self, input=128, hidden=256, output=1):
         super(LargeBinaryClassifier, self).__init__()
-        self.fc1 = nn.Linear(input, hidden)
-        self.fc2 = nn.Linear(hidden, hidden)
-        self.classifier = nn.Linear(hidden, output)
+        self.layer_1 = nn.Linear(input, hidden) 
+        self.layer_2 = nn.Linear(hidden, hidden)
+        self.layer_3 = nn.Linear(hidden, 64)
+        self.layer_out = nn.Linear(64, output) 
 
     def forward(self, x):
-        x = self.fc1(x)
-        x = F.relu(self.fc2(x))
-        return torch.clamp_max(self.classifier(x), 1.0)
+        x = self.layer_1(x)
+        x = self.layer_2(x)
+        x = F.relu(self.layer_3(x))
+        return torch.sigmoid(self.layer_out(x))

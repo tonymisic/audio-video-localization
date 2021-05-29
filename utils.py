@@ -1,4 +1,4 @@
-import torch
+import torch, matplotlib.pyplot as plt, torchaudio
 
 def temporal_accuracy(pred, y, threshold):
     assert pred.size() == y.size()
@@ -13,3 +13,17 @@ def temporal_accuracy(pred, y, threshold):
                     count += 1
             total += 1
     return count / total
+
+def load_videos(filename):
+    """
+    (string) root_dir: root directory of dataset
+    (string) filename: .txt file of data annotations
+    (list) return: [[class, filename, audio_quality, start, end], ... ]
+    """
+    data = []
+    f = open(filename, 'r')
+    for line in f.readlines():
+        line = line.rstrip('\n')
+        temp = line.split('&')
+        data.append(temp)
+    return data

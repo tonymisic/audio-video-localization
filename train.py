@@ -30,7 +30,7 @@ extractor = torch.hub.load('harritaylor/torchvggish', 'vggish')
 extractor.eval(), extractor.to(device)
 # model
 model = LargeBinaryClassifier()
-criterion = torch.nn.BCEWithLogitsLoss()
+criterion = torch.nn.BCELoss()
 optimizer = optim.SGD(model.parameters(), lr=wandb.config['learning_rate'], momentum=0.9)
 model.to(device)
 # training loop
