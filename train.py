@@ -1,7 +1,7 @@
 from torch.utils.data.dataloader import DataLoader
 from audioloader import AVE_Audio
 import torch, wandb, torch.optim as optim 
-from models import BinaryClassifier
+from models import LargeBinaryClassifier
 from utils import temporal_accuracy
 '''
 Main training script
@@ -12,7 +12,7 @@ wandb.init(project="Audio Binary Classifier",
         "learning_rate": 0.001,
         "dataset": "AVE",
         "device": "GTX1080",
-        "epochs": 50,
+        "epochs": 20,
         "batch_size": 21,
         "threshold": 0.5
     }
@@ -29,13 +29,13 @@ test_loader = DataLoader(test_data, 1, shuffle=True, num_workers=1, pin_memory=T
 extractor = torch.hub.load('harritaylor/torchvggish', 'vggish')
 extractor.eval(), extractor.to(device)
 # model
-model = BinaryClassifier()
+model = LargeBinaryClassifier()
 criterion = torch.nn.BCEWithLogitsLoss()
 optimizer = optim.SGD(model.parameters(), lr=wandb.config['learning_rate'], momentum=0.9)
 model.to(device)
 # training loop
 epoch = 0
-while epoch <= 50:
+while epoch <= wandb.config['epochs']:
     print("Epoch: " + str(epoch) + " started!")
     running_loss, running_accuracy, batch = 0.0, 0.0, 0
     ### --------------- TRAIN --------------- ###
