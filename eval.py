@@ -2,7 +2,7 @@ from torch.utils.data.dataloader import DataLoader
 from audioloader import AVE_Audio
 import torch, wandb 
 from models import LargeBinaryClassifier
-from utils import temporal_accuracy
+from utils import temporal_accuracy, class_accuracy
 '''
 Main training script
 '''
@@ -24,11 +24,12 @@ val_loader = DataLoader(val_data, wandb.config['batch_size'], shuffle=True, num_
 extractor = torch.hub.load('harritaylor/torchvggish', 'vggish')
 extractor.eval(), extractor.to(device)
 # model
-model = LargeBinaryClassifier()
-model.load_state_dict(torch.load('models/audio0.pth'))
+model = LargeBinaryClassifier(weight=torch.Tensor([0.2, 0.8]))
+model.load_state_dict(torch.load('models/audio1.pth'))
 model.eval(), model.to(device)
 ### --------------- EVAL --------------- ###
 running_accuracy, batch = 0.0, 0
+background_acc, event_acc = 0, 0
 for audio_files, spatial_labels, temporal_labels in val_loader:
     spatial_labels, temporal_labels = spatial_labels.to(device), temporal_labels.to(device)
     features = torch.zeros([wandb.config['batch_size'], 10, 128])
@@ -41,5 +42,11 @@ for audio_files, spatial_labels, temporal_labels in val_loader:
             preds[i][j] = model(features[i,j,:])
     preds = preds.to(device)
     running_accuracy += float(temporal_accuracy(preds, temporal_labels, wandb.config['threshold']))
+    # class statistics
+    c1, c2 = class_accuracy(preds, temporal_labels, wandb.config['threshold'])
+    background_acc += float(c1)
+    event_acc += float(c2)
     batch += 1
     wandb.log({"Eval Accuracy": running_accuracy / batch})
+    wandb.log({"Eval Event Accuracy": event_acc / batch})
+    wandb.log({"Eval Background Accuracy": background_acc / batch})

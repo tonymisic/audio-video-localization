@@ -14,6 +14,26 @@ def temporal_accuracy(pred, y, threshold):
             total += 1
     return count / total
 
+def class_accuracy(pred, y, threshold):
+    assert pred.size() == y.size()
+    c_0, c_1, t_0, t_1 = 0, 0, 0, 0
+    for i in range(pred.size(0)):
+        for j in range(pred.size(1)):
+            if pred[i][j] > threshold:
+                if y[i][j] == 1:
+                    c_1 += 1
+                t_1 += 1
+            else:
+                if y[i][j] == 0:
+                    c_0 += 1
+                t_0 += 1
+    if (t_0 == 0):
+        return 0, c_1 / t_1
+    elif (t_1 == 0):
+        return c_0 / t_0, 0
+    else:
+        return c_0 / t_0, c_1 / t_1
+
 def load_videos(filename):
     """
     (string) root_dir: root directory of dataset

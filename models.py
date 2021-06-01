@@ -37,8 +37,11 @@ class LargeBinaryClassifier(nn.Module):
         self.layer_3 = nn.Linear(hidden, 64)
         self.layer_out = nn.Linear(64, output) 
 
-    def forward(self, x):
+    def forward(self, x, train=False):
         x = self.layer_1(x)
-        x = self.layer_2(x)
+        x = F.relu(self.layer_2(x))
         x = F.relu(self.layer_3(x))
-        return torch.sigmoid(self.layer_out(x))
+        if train:
+            return self.layer_out(x)
+        else:
+            return torch.sigmoid(self.layer_out(x))
