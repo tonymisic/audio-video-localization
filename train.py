@@ -2,7 +2,7 @@ from torch.utils.data.dataloader import DataLoader
 from audioloader import AVE_Audio
 import torch, wandb, torch.optim as optim 
 from models import LargeBinaryClassifier
-from utils import temporal_accuracy, class_accuracy
+from utils import temporal_accuracy, class_accuracy, video_accuracy
 '''
 Main training script
 '''
@@ -12,11 +12,11 @@ wandb.init(project="Audio Binary Classifier",
         "learning_rate": 0.001,
         "dataset": "AVE",
         "device": "GTX1080",
-        "epochs": 20,
+        "epochs": 60,
         "batch_size": 21,
         "threshold": 0.5,
-        "bckgrnd_weight": 0.8,
-        "event_weight": 0.2,
+        "bckgrnd_weight": 0.82,
+        "event_weight": 0.18,
     }
 )
 # device 
@@ -32,15 +32,16 @@ extractor = torch.hub.load('harritaylor/torchvggish', 'vggish')
 extractor.eval(), extractor.to(device)
 # model
 model = LargeBinaryClassifier()
-criterion = torch.nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([0.2]).to(device))
+model.load_state_dict(torch.load('models/audio30.pth'))
+criterion = torch.nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([0.18]).to(device))
 optimizer = optim.SGD(model.parameters(), lr=wandb.config['learning_rate'], momentum=0.9)
 model.to(device)
 # training loop
-epoch = 0
+epoch = 31
 while epoch <= wandb.config['epochs']:
     print("Epoch: " + str(epoch) + " started!")
     running_loss, running_accuracy, batch = 0.0, 0.0, 0
-    background_acc, event_acc = 0, 0
+    background_acc, event_acc, video_acc = 0, 0, 0
     ### --------------- TRAIN --------------- ###
     for audio_files, spatial_labels, temporal_labels in train_loader:
         spatial_labels, temporal_labels = spatial_labels.to(device), temporal_labels.to(device)
@@ -57,8 +58,9 @@ while epoch <= wandb.config['epochs']:
         loss = criterion(preds, temporal_labels)
         loss.backward(), optimizer.step()
         running_loss += float(loss)
-        running_accuracy += float(temporal_accuracy(preds, temporal_labels, wandb.config['threshold']))
-        c1, c2 = class_accuracy(preds, temporal_labels, wandb.config['threshold'])
+        running_accuracy += float(temporal_accuracy(torch.sigmoid(preds), temporal_labels, wandb.config['threshold']))
+        video_acc += float(video_accuracy(torch.sigmoid(preds), temporal_labels, wandb.config['threshold'], device))
+        c1, c2 = class_accuracy(torch.sigmoid(preds), temporal_labels, wandb.config['threshold'])
         background_acc += float(c1)
         event_acc += float(c2)
         batch += 1
@@ -67,12 +69,12 @@ while epoch <= wandb.config['epochs']:
     wandb.log({"Training Accuracy": running_accuracy / batch})
     wandb.log({"Training Event Accuracy": event_acc / batch})
     wandb.log({"Training Background Accuracy": background_acc / batch})
-    wandb.log({"Average Training Accuracy": (event_acc + background_acc) / 2 / batch})
+    wandb.log({"Training Video Accuracy": video_acc / batch})
     torch.save(model.state_dict(), 'models/audio' + str(epoch) + '.pth')
     print("Saved Models for Epoch:" + str(epoch))
     ### --------------- TEST --------------- ###
     running_loss, running_accuracy, batch = 0.0, 0.0, 0
-    background_acc, event_acc = 0, 0
+    background_acc, event_acc, video_acc = 0, 0, 0
     for audio_files, spatial_labels, temporal_labels in test_loader:
         spatial_labels, temporal_labels = spatial_labels.to(device), temporal_labels.to(device)
         optimizer.zero_grad()
@@ -87,17 +89,17 @@ while epoch <= wandb.config['epochs']:
         preds = preds.to(device)
         running_loss += float(criterion(preds, temporal_labels))
         running_accuracy += float(temporal_accuracy(preds, temporal_labels, wandb.config['threshold']))
+        video_acc += float(video_accuracy(preds, temporal_labels, wandb.config['threshold'], device))
         # class statistics
         c1, c2 = class_accuracy(preds, temporal_labels, wandb.config['threshold'])
         background_acc += float(c1)
         event_acc += float(c2)
         batch += 1
         wandb.log({"Testing Loss": running_loss / batch})
-        wandb.log({"Testing Loss": running_loss / batch})
     wandb.log({"Testing Accuracy": running_accuracy / batch})
     wandb.log({"Testing Event Accuracy": event_acc / batch})
     wandb.log({"Testing Background Accuracy": background_acc / batch})
-    wandb.log({"Average Testing Accuracy": (event_acc + background_acc) / 2 / batch})
+    wandb.log({"Testing Video Accuracy": video_acc / batch})
     wandb.log({"epoch": epoch + 1})
     epoch += 1
     print("Epoch: " + str(epoch - 1) + " finished!")

@@ -32,14 +32,12 @@ class LargeBinaryClassifier(nn.Module):
     """
     def __init__(self, input=128, hidden=256, output=1):
         super(LargeBinaryClassifier, self).__init__()
-        self.layer_1 = nn.Linear(input, hidden) 
-        self.layer_2 = nn.Linear(hidden, hidden)
+        self.layer_1 = nn.Linear(input, hidden)
         self.layer_3 = nn.Linear(hidden, 64)
         self.layer_out = nn.Linear(64, output) 
 
     def forward(self, x, train=False):
         x = self.layer_1(x)
-        x = F.relu(self.layer_2(x))
         x = F.relu(self.layer_3(x))
         if train:
             return self.layer_out(x)
