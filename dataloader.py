@@ -1,5 +1,6 @@
+from numpy import flatiter
 from torch.utils.data import Dataset
-import numpy as np, random, h5py
+import h5py, torch
 class FastAVE(Dataset):
     '''
     Precomputed Feature Dataloader for the Audio-Visual Events Dataset.
@@ -24,15 +25,9 @@ class FastAVE(Dataset):
         temporal_label = self.temporal_labels[self.order[index]]
         spatial_label = self.spatial_labels[self.order[index]]
         if self.split == 'train':
-            s_video, video_idx = self.shuffle(video)
-            s_audio, audio_idx = self.shuffle(audio)
-            return video, audio, s_video, s_audio, video_idx, audio_idx
+            return video, audio
         else:
             return video, audio, temporal_label, spatial_label
-
-    def shuffle(self, tensor):
-        indicies = random.sample(range(10), 10)
-        return tensor[indicies], indicies
 
     def data_from_file(self, file):
         with h5py.File(file, 'r') as hf:

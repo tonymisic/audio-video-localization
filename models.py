@@ -1,4 +1,3 @@
-from sys import maxsize
 from torch import nn
 from torch.functional import F
 import torch
@@ -43,3 +42,49 @@ class LargeBinaryClassifier(nn.Module):
             return self.layer_out(x)
         else:
             return torch.sigmoid(self.layer_out(x))
+
+class Pepe(nn.Module):
+    """Model to predict segment temporal alignment
+    """
+    def __init__(self, video_size=25088, audio_size=128, segments=10, normalize=False):
+        super(Pepe, self).__init__()
+        self.normalize = normalize;
+        self.video_layers = nn.Sequential(
+            nn.Linear(video_size, 4096),
+            nn.Linear(4096, 1024), nn.ReLU(),
+            nn.Linear(1024, 512), nn.ReLU(),
+            nn.Linear(512, segments), nn.ReLU()
+        )
+        self.audio_layers = nn.Sequential(
+            nn.Linear(audio_size, audio_size),
+            nn.Linear(audio_size, segments), nn.ReLU()
+        )
+    
+    def forward(self, video, audio):
+        video = self.video_layers(video)
+        audio = self.audio_layers(audio)
+        if self.normalize:
+            return torch.sigmoid(video), torch.sigmoid(audio)
+        else:
+            return video, audio
+
+
+class AudioMoment(nn.Module):
+    """Model to predict segment temporal alignment
+    """
+    def __init__(self, video_size=25088, embed=128, heads=1, output=10):
+        super(AudioMoment, self).__init__()
+        self.layer_1 = nn.Linear(video_size, 512)
+        self.layer_2 = nn.Linear(512, embed)
+        self.attention = nn.MultiheadAttention(embed, heads)
+        self.classifier = nn.Linear(embed, output)
+    
+    def forward(self, query, video): # query is audio segment
+        assert query.size(0) == 1
+        assert video.size(0) == 10
+        video = self.layer_1(video) # batch x 10 x 25088
+        video = F.relu(self.layer_2(video))
+        query, video = self.reorder(query), self.reorder(video)
+        x = self.attention(query, video, video)
+        x = F.relu(self.classifier(x))
+        return torch.sigmoid(x)
