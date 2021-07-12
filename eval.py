@@ -1,54 +1,43 @@
 from torch.utils.data.dataloader import DataLoader
-from audioloader import AVE_Audio
-import torch, wandb 
-from models import LargeBinaryClassifier
-from utils import temporal_accuracy, class_accuracy, video_accuracy
-'''
-Main training script
-'''
-wandb.init(project="Audio Binary Classifier",
-    config={
-        "task": "Evaluation",
-        "dataset": "AVE",
-        "device": "GTX1080",
-        "batch_size": 1,
-        "threshold": 0.5
-    }
-)
+from dataloader import FastAVE
+import torch, wandb
+from models import Pepe
+# globals
+# wandb.init(project="Unsupervised AVE",
+#     config={
+#         "DEV": False,
+#         "MULTI_GPU" : False,
+#         "FEATURE_BANK" : 'AVE_Dataset/AVE_Features/',
+#     }
+# )
 # device 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# testing data
-val_data = AVE_Audio('AVE_Dataset/', 'val', 'classes.json')
-val_loader = DataLoader(val_data, wandb.config['batch_size'], shuffle=True, num_workers=1, pin_memory=True)
-# feature extractor
-extractor = torch.hub.load('harritaylor/torchvggish', 'vggish')
-extractor.eval(), extractor.to(device)
+device = torch.device("cuda")
+# val data
+val_data = FastAVE('AVE_Dataset/AVE_Features/', 'val')
+val_loader = DataLoader(val_data, 1, shuffle=True, num_workers=1, pin_memory=True)
 # model
-model = LargeBinaryClassifier()
-model.load_state_dict(torch.load('models/audio30.pth'))
-model.eval(), model.to(device)
-### --------------- EVAL --------------- ###
-running_accuracy, batch = 0.0, 0
-background_acc, event_acc, video_acc = 0, 0, 0
-for audio_files, spatial_labels, temporal_labels in val_loader:
-    spatial_labels, temporal_labels = spatial_labels.to(device), temporal_labels.to(device)
-    features = torch.zeros([wandb.config['batch_size'], 10, 128])
-    for i, v in enumerate(audio_files, 0):
-        features[i] = torch.divide(extractor(v), 255)
-    features = features.to(device)
-    preds = torch.zeros([wandb.config['batch_size'], 10])
-    for i in range(wandb.config['batch_size']):
-        for j in range(10):
-            preds[i][j] = model(features[i,j,:])
-    preds = preds.to(device)
-    running_accuracy += float(temporal_accuracy(preds, temporal_labels, wandb.config['threshold']))
-    video_acc += float(video_accuracy(preds, temporal_labels, wandb.config['threshold'], device))
-    # class statistics
-    c1, c2 = class_accuracy(preds, temporal_labels, wandb.config['threshold'])
-    background_acc += float(c1)
-    event_acc += float(c2)
-    batch += 1
-    wandb.log({"Eval Accuracy": running_accuracy / batch})
-    wandb.log({"Eval Event Accuracy": event_acc / batch})
-    wandb.log({"Eval Background Accuracy": background_acc / batch})
-    wandb.log({"Eval Video Accuracy": video_acc / batch})
+model = Pepe(normalize=True)
+model.load_state_dict(torch.load('models/unsupervised/unsupervised2.pth'))
+model.eval()
+model.to(device)
+accuracy_video, accuracy_audio = 0, 0
+iteration, batch = 0, 0
+### ------------- EVALUATION ------------- ###
+for video, audio, temporal, spatial in val_loader:
+    video = torch.flatten(video, start_dim=2, end_dim=4)
+    video, audio, temporal, spatial = video.to(device), audio.to(device), temporal.to(device), spatial.to(device)
+    video, audio = video.type(torch.FloatTensor).to(device), audio.type(torch.FloatTensor).to(device)
+    for segment in range(10):
+        video_out, audio_out = model(video[:, segment].squeeze(dim=1), audio[:, segment])
+        label = torch.zeros([1, 10]).to(device)
+        label[:, segment] = 1
+        video_pred, audio_pred = torch.max(video_out, dim=1), torch.max(audio_out, dim=1)
+        label = torch.max(label, dim=1)
+        accuracy_video += torch.sum(label.indices == video_pred.indices)
+        accuracy_audio += torch.sum(label.indices == audio_pred.indices)
+        # write results
+        # wandb.log({
+        #     "Test Acc Video": accuracy_video,
+        #     "Test Acc Audio": accuracy_audio,
+        # })
+        iteration += 1
