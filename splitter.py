@@ -70,12 +70,12 @@ class ZeroShot():
             else:
                 neg_list.append(name)
         print("------------------------------------------------")
-        print("Classes used during training: " + str(pos_list))
+        print("Classes in training: " + str(pos_list))
         print("------------------------------------------------")
-        print("Classes NOT used during training: " + str(neg_list))
+        print("Classes in validation: " + str(neg_list))
         print("------------------------------------------------")
         print("Split complete, saved in: " + self.save)
 
-# zsl = ZeroShot('AVE_Dataset/ZSL_Features/')
-# zsl.split_data(neg_classes=[0,1,2])
-# print("")
+zsl = ZeroShot('AVE_Dataset/ZSL_Features/')
+zsl.split_data(neg_classes=[0,1,2])
+print("")
