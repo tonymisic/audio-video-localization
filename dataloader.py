@@ -4,19 +4,26 @@ class FastAVE(Dataset):
     '''
     Precomputed Feature Dataloader for the Audio-Visual Events Dataset.
     '''
-    def __init__(self, root_dir, split, class_json='AVE_Dataset/classes.json'):
+    def __init__(self, root_dir, split, class_json='AVE_Dataset/classes.json', ZSL=False):
         self.root_dir = root_dir
         self.split = split
         self.spatial_labels = self.data_from_file(root_dir + 'labels.h5')
         self.temporal_labels = self.data_from_file(root_dir + 'temporal_labels.h5')
         self.audio_features = self.data_from_file(root_dir + 'audio_feature.h5')
         self.video_features = self.data_from_file(root_dir + 'visual_feature.h5')
-        if split == 'train':
-            self.order = self.data_from_file(root_dir + 'train_order.h5')
-        elif split == 'test':
-            self.order = self.data_from_file(root_dir + 'test_order.h5')
-        elif split == 'val':
-            self.order = self.data_from_file(root_dir + 'val_order.h5')
+        self.ZSL = ZSL
+        if self.ZSL:
+            if split == 'train':
+                self.order = self.data_from_file(root_dir + 'ZSL_Features/trainingZSL.h5')
+            elif split == 'val':
+                self.order = self.data_from_file(root_dir + 'ZSL_Features/testingZSL.h5')
+        else:
+            if split == 'train':
+                self.order = self.data_from_file(root_dir + 'train_order.h5')
+            elif split == 'test':
+                self.order = self.data_from_file(root_dir + 'test_order.h5')
+            elif split == 'val':
+                self.order = self.data_from_file(root_dir + 'val_order.h5')
         self.class_map = json.load(open(class_json))
         
     def __getitem__(self, index):
