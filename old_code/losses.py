@@ -1,13 +1,32 @@
+from __future__ import print_function
+import torch
+import torch.nn as nn
+from transformers import AutoTokenizer, AutoModel
+class WordEmbedLoss(nn.Module):
+    """ Loss based on segement class word embedding 
+    defaults to BERT text embedding
+    """
+    def __init__(self, embedding='bert'):
+        super(WordEmbedLoss, self).__init__()
+        self.tokenizer, self.model = 0, 0
+        if embedding == 'bert':
+            self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+            self.model = AutoModel.from_pretrained("bert-base-uncased")
+        else:
+            print("Uninitialized model and/or tokenizer!")
+        assert self.tokenizer != 0 and self.model != 0
+    
+    def forward(self, features, labels):
+        assert features.size(0) == labels.size(0)
+
+        for i in range(features.size(0)):
+            input = self.tokenizer(labels[i], return_tensors="pt")
+            output = self.model(**input)['pooler_output'][0]
+
 """
 Author: Yonglong Tian (yonglong@mit.edu)
 Date: May 07, 2020
 """
-from __future__ import print_function
-
-import torch
-import torch.nn as nn
-
-
 class SupConLoss(nn.Module):
     """Supervised Contrastive Learning: https://arxiv.org/pdf/2004.11362.pdf.
     It also supports the unsupervised contrastive loss in SimCLR"""

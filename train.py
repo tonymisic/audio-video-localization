@@ -3,6 +3,8 @@ from dataloader import FastAVE
 import torch, wandb, torch.optim as optim 
 from transformers import AutoTokenizer, AutoModel
 from models import Video, Audio, Text
+from splitter import ZeroShot
+from utils import video_accuracy, class_accuracy
 '''
 Main training script
 '''
@@ -19,11 +21,14 @@ Main training script
 # )
 # device 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# seperate classes
+zsl = ZeroShot('AVE_Dataset/ZSL_Features/')
+zsl.split_data(neg_classes=[0,1,2,3,4])
 # training data
-train_data = FastAVE('AVE_Dataset/AVE_Features/', 'train')
+train_data = FastAVE('AVE_Dataset/AVE_Features/', 'train', ZSL=True)
 train_loader = DataLoader(train_data, 21, shuffle=True, num_workers=3, pin_memory=True)
 # testing data
-test_data = FastAVE('AVE_Dataset/AVE_Features/', 'test')
+test_data = FastAVE('AVE_Dataset/AVE_Features/', 'val', ZSL=True)
 test_loader = DataLoader(test_data, 1, shuffle=True, num_workers=1, pin_memory=True)
 # feature extractor
 tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")

@@ -76,6 +76,5 @@ class ZeroShot():
         print("------------------------------------------------")
         print("Split complete, saved in: " + self.save)
 
-zsl = ZeroShot('AVE_Dataset/ZSL_Features/')
-zsl.split_data(neg_classes=[0,1,2])
+
 print("")
