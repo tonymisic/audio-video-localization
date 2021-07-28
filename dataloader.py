@@ -14,9 +14,9 @@ class FastAVE(Dataset):
         self.ZSL = ZSL
         if self.ZSL:
             if split == 'train':
-                self.order = self.data_from_file(root_dir + 'ZSL_Features/trainingZSL.h5')
+                self.order = self.data_from_file('AVE_Dataset/ZSL_Features/trainingZSL.h5')
             elif split == 'val':
-                self.order = self.data_from_file(root_dir + 'ZSL_Features/testingZSL.h5')
+                self.order = self.data_from_file('AVE_Dataset/ZSL_Features/testingZSL.h5')
         else:
             if split == 'train':
                 self.order = self.data_from_file(root_dir + 'train_order.h5')
@@ -33,7 +33,7 @@ class FastAVE(Dataset):
         spatial_label = self.spatial_labels[self.order[index]]
         class_names = self.get_class_names(spatial_label)
         if self.split == 'train':
-            return video.squeeze(), audio.squeeze(), temporal_label, class_names
+            return video.squeeze(), audio.squeeze(), temporal_label, spatial_label, class_names
         else:
             return video.squeeze(), audio.squeeze(), temporal_label, spatial_label, class_names
 

@@ -1,5 +1,4 @@
-import torch, random
-
+import torch
 def video_accuracy(pred, y, threshold, device):
     assert pred.size() == y.size()
     count, total = 0, 0
