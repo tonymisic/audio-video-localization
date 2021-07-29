@@ -14,7 +14,7 @@ wandb.init(project="Zero Shot Learning",
         "learning_rate": 0.001,
         "dataset": "AVE",
         "device": "GTX1080",
-        "epochs": 60,
+        "epochs": 999,
         "starting_epoch" : 0,
         "batch_size": 21,
         "threshold": 0.5,
@@ -61,8 +61,8 @@ while epoch <= wandb.config['epochs']:
                 inputs = tokenizer(class_names[j][i], return_tensors="pt")
                 inputs = inputs.to(device)
                 embeddings[i][j] = extractor(**inputs)['pooler_output'][0]    
-        video_pred = video_model(video).squeeze()
-        audio_pred = audio_model(audio).squeeze()
+        video_pred = video_model(video).squeeze(dim=2)
+        audio_pred = audio_model(audio).squeeze(dim=2)
         text_pred = text_model(embeddings)
         video_loss = criterion_video(video_pred, temporal_labels)
         video_loss.backward(), opt_video.step()
@@ -78,8 +78,8 @@ while epoch <= wandb.config['epochs']:
         wandb.log({"Audio Loss": running_lossA / batch})
     wandb.log({"Training Video Accuracy": running_accuracyV / batch})
     wandb.log({"Training Audio Accuracy": running_accuracyA / batch})
-    torch.save(audio_model.state_dict(), 'models/audio' + str(epoch) + '.pth')
-    torch.save(video_model.state_dict(), 'models/video' + str(epoch) + '.pth')
+    torch.save(audio_model.state_dict(), 'models/audio/audio' + str(epoch) + '.pth')
+    torch.save(video_model.state_dict(), 'models/video/video' + str(epoch) + '.pth')
     print("Saved Models for Epoch:" + str(epoch))
     ### --------------- TEST --------------- ###
     running_lossV, running_accuracyV, batch = 0.0, 0.0, 0
@@ -93,8 +93,8 @@ while epoch <= wandb.config['epochs']:
                 inputs = tokenizer(class_names[j][i], return_tensors="pt")
                 inputs = inputs.to(device)
                 embeddings[i][j] = extractor(**inputs)['pooler_output'][0]    
-        video_pred = video_model(video).squeeze()
-        audio_pred = audio_model(audio).squeeze()
+        video_pred = video_model(video).squeeze(dim=2)
+        audio_pred = audio_model(audio).squeeze(dim=2)
         text_pred = text_model(embeddings)
         running_accuracyV += video_accuracy(video_pred, temporal_labels, wandb.config['threshold'], device)
         running_accuracyA += video_accuracy(audio_pred, temporal_labels, wandb.config['threshold'], device)

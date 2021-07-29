@@ -57,7 +57,8 @@ class ZeroShot():
             if self.inclusion_list[np.argmax(val)] == 1:
                 training.append(i)
             else:
-                testing.append(i)
+                if np.sum(self.temporal[i]) < 10:
+                    testing.append(i)
         hf1, hf2 = h5py.File(self.save + 'trainingZSL.h5', 'w'), h5py.File(self.save + 'testingZSL.h5', 'w')
         hf1.create_dataset('dataset', data=np.array(training)), hf2.create_dataset('dataset', data=np.array(testing))
         hf1.close(), hf2.close() 

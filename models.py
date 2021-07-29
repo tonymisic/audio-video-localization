@@ -25,12 +25,16 @@ class Audio(nn.Module):
     def __init__(self, audio_size=128, out=64, normalize=True):
         super(Audio, self).__init__()
         self.normalize = normalize
-        self.layer1 = nn.Linear(audio_size, 128)
-        self.layer2 = nn.Linear(128, out)
+        self.layer1 = nn.Linear(audio_size, 512)
+        self.layer2 = nn.Linear(512, 256)
+        self.layer3 = nn.Linear(256, 128)
+        self.layer4 = nn.Linear(128, out)
     
     def forward(self, audio):
         audio = F.relu(self.layer1(audio))
-        audio = self.layer2(audio)
+        audio = F.relu(self.layer2(audio))
+        audio = F.relu(self.layer3(audio))
+        audio = self.layer4(audio)
         if self.normalize:
             return torch.sigmoid(audio)
         else:
